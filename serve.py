@@ -15,7 +15,7 @@ import uvicorn
 
 from typing import Optional
 
-_ckpt_path = "gs://gpt-j-6b-checkpoints/finetune_end_early_slim/step_501"
+_ckpt_path = "gs://gpt-j-6b-checkpoints/finetune_end_early_slim/step_501/"
 
 app = FastAPI()
 params = {
