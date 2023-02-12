@@ -15,6 +15,8 @@ import uvicorn
 
 from typing import Optional
 
+_ckpt_path = "gs://gpt-j-6b-checkpoints/finetune_end_early_slim/step_501"
+
 app = FastAPI()
 params = {
     "layers": 28,
@@ -49,7 +51,7 @@ tokenizer = transformers.GPT2TokenizerFast.from_pretrained("gpt2")
 total_batch = per_replica_batch * jax.device_count() // cores_per_replica
 
 network = CausalTransformer(params)
-network.state = read_ckpt(network.state, "./step_501/", devices.shape[1])
+network.state = read_ckpt(network.state, _ckpt_path, devices.shape[1])
 del network.state["opt_state"]
 network.state = network.move_xmap(network.state, np.zeros(cores_per_replica))
 
