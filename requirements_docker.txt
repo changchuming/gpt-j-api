@@ -12,6 +12,8 @@ Flask~=1.1.4
 ftfy~=6.1.1
 func-timeout~=4.3.5
 google-cloud-storage>=2.7.0
+jax[tpu]==0.2.18
+jaxlib[tpu]==0.1.69
 lm-dataformat~=0.0.20
 numpy==1.19.5
 optax==0.0.9
@@ -22,7 +24,7 @@ requests~=2.25.1
 smart_open[gcs]~=6.3.0
 streamlit~=0.84.0
 tqdm>=4.64.1
-transformers~=4.26.1
+transformers~=4.16.2
 typing-extensions~=4.4.0
 uvicorn~=0.20.0
 wandb>=0.13.10
