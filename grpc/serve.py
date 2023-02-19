@@ -37,7 +37,7 @@ class FinetuneServeServicer(finetune_serve_pb2_grpc.FinetuneServeServicer):
         with status.context(context):
             response = finetune_serve_pb2.PromptResponse()
             
-                start = time.time()
+            start = time.time()
             tokens = tokenizer.encode(request.prompt)
             provided_ctx = len(tokens)
             if request.token_max_length + provided_ctx > 2048:
