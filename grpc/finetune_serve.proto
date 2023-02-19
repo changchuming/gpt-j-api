@@ -17,8 +17,17 @@ message PromptRequest {
   int64 token_max_length = 2;
   double temp = 3;
   double top_p = 4;
+  string stop_sequence = 5;
 }
 
 message PromptResponse {
-  string response = 1;
+  string model = 1;
+  double compute_time = 2;
+  string response = 3;
+
+  string prompt = 4;
+  int token_max_length = 5;
+  double temperature = 6;
+  double top_p = 7;
+  double stop_sequence = 8;
 }
