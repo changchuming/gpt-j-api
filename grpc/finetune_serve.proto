@@ -1,0 +1,24 @@
+syntax = "proto3";
+
+package endpoints.finetune.serve;
+
+option java_multiple_files = true;
+option java_outer_classname = "FinetuneServeProto";
+option java_package = "com.google.endpoints.finetune.serve";
+
+
+service FinetuneServe {
+  // Prompts model.
+  rpc Prompt(PromptRequest) returns (PromptResponse) {}
+}
+
+message PromptRequest {
+  string prompt = 1;
+  int64 token_max_length = 2;
+  double temp = 3;
+  double top_p = 4;
+}
+
+message PromptResponse {
+  string response = 1;
+}

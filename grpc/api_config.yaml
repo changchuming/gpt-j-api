@@ -1,0 +1,25 @@
+# The configuration schema is defined by service.proto file
+# https://github.com/googleapis/googleapis/blob/master/google/api/service.proto
+type: google.api.Service
+config_version: 3
+
+#
+# Name of the service configuration.
+#
+name: finetune.serve.endpoints.gpt-j-6b-finetune.cloud.goog
+
+#
+# API title to appear in the user interface (Google Cloud Console).
+#
+title: Finetune Serve gRPC API
+apis:
+- name: endpoints.finetune.serve.FinetuneServe
+
+#
+# API usage restrictions.
+#
+usage:
+  rules:
+  # Prompt should not be accessed without auth.
+  - selector: endpoints.finetune.serve.FinetuneServe.Prompt
+    allow_unregistered_calls: true
