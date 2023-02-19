@@ -26,7 +26,7 @@ message PromptResponse {
   string response = 3;
 
   string prompt = 4;
-  int token_max_length = 5;
+  int64 token_max_length = 5;
   double temperature = 6;
   double top_p = 7;
   double stop_sequence = 8;

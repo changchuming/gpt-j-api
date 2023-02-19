@@ -21,6 +21,7 @@ protobuf==3.20.0
 ray[default]~=1.4.1
 requests~=2.25.1
 smart_open[gcs]~=6.3.0
+status
 streamlit~=0.84.0
 tensorflow-cpu==2.6.0
 tensorflow==2.6.0

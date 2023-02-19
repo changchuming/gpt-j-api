@@ -6,11 +6,19 @@ import time
 from google.protobuf import struct_pb2
 import grpc
 
-import finetune_serve
-from generated_pb2 import finetune_serve_pb2
-from generated_pb2 import finetune_serve_pb2_grpc
+import finetune_serve_pb2
+import finetune_serve_pb2_grpc
 import status
 
+import jax
+from jax.experimental import maps
+import numpy as np
+import optax
+import transformers
+
+from mesh_transformer.checkpoint import read_ckpt
+from mesh_transformer.sampling import nucleaus_sample
+from mesh_transformer.transformer_shard import CausalTransformer
 
 _ONE_DAY_IN_SECONDS = 60 * 60 * 24
 _CKPT_PATH = "gs://gpt-j-6b-checkpoints/finetune_end_early_slim/step_501/"
