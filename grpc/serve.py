@@ -8,7 +8,6 @@ import grpc
 
 import finetune_serve_pb2
 import finetune_serve_pb2_grpc
-import status
 
 import jax
 from jax.experimental import maps
@@ -42,51 +41,49 @@ class FinetuneServeServicer(finetune_serve_pb2_grpc.FinetuneServeServicer):
         self._network = network
 
     def Prompt(self, request: finetune_serve_pb2.PromptRequest, context):
-        with status.context(context):
-            response = finetune_serve_pb2.PromptResponse()
+        response = finetune_serve_pb2.PromptResponse()
 
-            top_p = request.top_p if request.top_p != 0 else 0.9
-            temperature = request.temperature if request.temperature != 0 else 1.0
-            token_max_length = request.token_max_length if request.token_max_length != 0 else 512
-            
-            start = time.time()
-            tokens = tokenizer.encode(request.prompt)
-            provided_ctx = len(tokens)
-            if token_max_length + provided_ctx > 2048:
-                return InvalidArgumentError("Length of tokens specified exceeds maximum length.")
-            pad_amount = seq - provided_ctx
+        top_p = request.top_p if request.top_p != 0 else 0.9
+        temperature = request.temperature if request.temperature != 0 else 1.0
+        token_max_length = request.token_max_length if request.token_max_length != 0 else 512
 
-            padded_tokens = np.pad(tokens, ((pad_amount, 0),)).astype(np.uint32)
-            batched_tokens = np.array([padded_tokens] * total_batch)
-            length = np.ones(total_batch, dtype=np.uint32) * len(tokens)
+        start = time.time()
+        tokens = tokenizer.encode(request.prompt)
+        provided_ctx = len(tokens)
+        if token_max_length + provided_ctx > 2048:
+            return InvalidArgumentError("Length of tokens specified exceeds maximum length.")
+        pad_amount = seq - provided_ctx
+        padded_tokens = np.pad(tokens, ((pad_amount, 0),)).astype(np.uint32)
+        batched_tokens = np.array([padded_tokens] * total_batch)
+        length = np.ones(total_batch, dtype=np.uint32) * len(tokens)
 
-            output = network.generate(
-                batched_tokens,
-                length,
-                request.token_max_length,
-                {
-                    "top_p": np.ones(total_batch) * top_p,
-                    "temp": np.ones(total_batch) * temperature,
-                },
-            )
+        output = network.generate(
+            batched_tokens,
+            length,
+            request.token_max_length,
+            {
+                "top_p": np.ones(total_batch) * top_p,
+                "temp": np.ones(total_batch) * temperature,
+            },
+        )
 
-            text = tokenizer.decode(output[1][0][0, :, 0])
+        text = tokenizer.decode(output[1][0][0, :, 0])
 
-            # A simple technique to stop at stop_sequence without modifying the underlying model
-            if request.stop_sequence != "" and request.stop_sequence in text:
-                text = text.split(request.stop_sequence)[0] + request.stop_sequence
+        # A simple technique to stop at stop_sequence without modifying the underlying model
+        if request.stop_sequence != "" and request.stop_sequence in text:
+            text = text.split(request.stop_sequence)[0] + request.stop_sequence
 
-            response.model = "GPT-J-6B"
-            response.compute_time = time.time() - start
-            response.response = text
-            response.prompt = context
-            response.token_max_length = token_max_length
-            response.temperature = temperature
-            response.top_p = top_p
-            response.stop_sequence = stop_sequence
+        response.model = "GPT-J-6B"
+        response.compute_time = time.time() - start
+        response.response = text
+        response.prompt = context
+        response.token_max_length = token_max_length
+        response.temperature = temperature
+        response.top_p = top_p
+        response.stop_sequence = stop_sequence
 
-            print(response)
-            return response
+        print(response)
+        return response
 
 
 
