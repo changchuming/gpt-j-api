@@ -95,7 +95,6 @@ def create_servicer():
     per_replica_batch = _PARAMS["per_replica_batch"]
     cores_per_replica = _PARAMS["cores_per_replica"]
 
-
     _PARAMS["sampler"] = nucleaus_sample
 
     # here we "remove" the optimizer parameters from the model (as we don't need them for inference)
