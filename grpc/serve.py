@@ -37,8 +37,9 @@ _PARAMS = {
 
 class FinetuneServeServicer(finetune_serve_pb2_grpc.FinetuneServeServicer):
     """Implements the FinetuneServe API server."""
-    def __init__(self, network):
+    def __init__(self, network, tokenizer):
         self._network = network
+	self._tokenizer = tokenizer
 
     def Prompt(self, request: finetune_serve_pb2.PromptRequest, context):
         response = finetune_serve_pb2.PromptResponse()
@@ -48,7 +49,7 @@ class FinetuneServeServicer(finetune_serve_pb2_grpc.FinetuneServeServicer):
         token_max_length = request.token_max_length if request.token_max_length != 0 else 512
 
         start = time.time()
-        tokens = tokenizer.encode(request.prompt)
+        tokens = self._tokenizer.encode(request.prompt)
         provided_ctx = len(tokens)
         if token_max_length + provided_ctx > 2048:
             return InvalidArgumentError("Length of tokens specified exceeds maximum length.")
@@ -57,7 +58,7 @@ class FinetuneServeServicer(finetune_serve_pb2_grpc.FinetuneServeServicer):
         batched_tokens = np.array([padded_tokens] * total_batch)
         length = np.ones(total_batch, dtype=np.uint32) * len(tokens)
 
-        output = network.generate(
+        output = self._network.generate(
             batched_tokens,
             length,
             request.token_max_length,
@@ -67,7 +68,7 @@ class FinetuneServeServicer(finetune_serve_pb2_grpc.FinetuneServeServicer):
             },
         )
 
-        text = tokenizer.decode(output[1][0][0, :, 0])
+        text = self._tokenizer.decode(output[1][0][0, :, 0])
 
         # A simple technique to stop at stop_sequence without modifying the underlying model
         if request.stop_sequence != "" and request.stop_sequence in text:
@@ -112,16 +113,16 @@ def create_network():
     network.state = read_ckpt(network.state, _CKPT_PATH, devices.shape[1])
     del network.state["opt_state"]
     network.state = network.move_xmap(network.state, np.zeros(cores_per_replica))
-    return network
+    return network, tokenizer
 
 
 def serve(port, shutdown_grace_duration):
     """Configures and runs the FinetuneServe API server."""
     server = grpc.server(futures.ThreadPoolExecutor(max_workers=1))
 
-    network = create_network()
+    network, tokenizer = create_network()
     finetune_serve_pb2_grpc.add_FinetuneServeServicer_to_server(
-        FinetuneServeServicer(network), server)
+        FinetuneServeServicer(network, tokenizer), server)
     server.add_insecure_port('[::]:{}'.format(port))
     server.start()
 
