@@ -44,11 +44,15 @@ class FinetuneServeServicer(finetune_serve_pb2_grpc.FinetuneServeServicer):
     def Prompt(self, request: finetune_serve_pb2.PromptRequest, context):
         with status.context(context):
             response = finetune_serve_pb2.PromptResponse()
+
+            top_p = request.top_p != 0 ? request.top_p : 0.9
+            temperature = request.temperature != 0 ? request.temperature : 1.0
+            token_max_length = request.token_max_length != 0 ? request.token_max_length : 512
             
             start = time.time()
             tokens = tokenizer.encode(request.prompt)
             provided_ctx = len(tokens)
-            if request.token_max_length + provided_ctx > 2048:
+            if token_max_length + provided_ctx > 2048:
                 return InvalidArgumentError("Length of tokens specified exceeds maximum length.")
             pad_amount = seq - provided_ctx
 
@@ -61,8 +65,8 @@ class FinetuneServeServicer(finetune_serve_pb2_grpc.FinetuneServeServicer):
                 length,
                 request.token_max_length,
                 {
-                    "top_p": np.ones(total_batch) * request.top_p,
-                    "temp": np.ones(total_batch) * request.temperature,
+                    "top_p": np.ones(total_batch) * top_p,
+                    "temp": np.ones(total_batch) * temperature,
                 },
             )
 
