@@ -44,6 +44,7 @@ class FinetuneServeServicer(finetune_serve_pb2_grpc.FinetuneServeServicer):
     def Prompt(self, request: finetune_serve_pb2.PromptRequest, context):
         response = finetune_serve_pb2.PromptResponse()
 
+        seq = _PARAMS["seq"]
         top_p = request.top_p if request.top_p != 0 else 0.9
         temperature = request.temperature if request.temperature != 0 else 1.0
         token_max_length = request.token_max_length if request.token_max_length != 0 else 512
@@ -92,7 +93,6 @@ def create_network():
     """Creates a transformer network."""
     per_replica_batch = _PARAMS["per_replica_batch"]
     cores_per_replica = _PARAMS["cores_per_replica"]
-    seq = _PARAMS["seq"]
 
 
     _PARAMS["sampler"] = nucleaus_sample
