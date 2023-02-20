@@ -41,13 +41,18 @@ class FinetuneServeServicer(finetune_serve_pb2_grpc.FinetuneServeServicer):
         self._network = network
         self._tokenizer = tokenizer
         self._total_batch = total_batch
-        maps.thread_resources.env = env
+        self._env = env
 
 
     def Prompt(self, request: finetune_serve_pb2.PromptRequest, context):
         response = finetune_serve_pb2.PromptResponse()
 
+        maps.thread_resources.env = self._env
         seq = _PARAMS["seq"]
+        prompt = request.prompt
+        stop_sequence = request.stop_sequence
+        if prompt == "":
+            return InvalidArgumentError("The field `prompt` in PromptRequest cannot be empty.")
         top_p = request.top_p if request.top_p != 0 else 0.9
         temperature = request.temperature if request.temperature != 0 else 1.0
         token_max_length = request.token_max_length if request.token_max_length != 0 else 512
@@ -65,7 +70,7 @@ class FinetuneServeServicer(finetune_serve_pb2_grpc.FinetuneServeServicer):
         output = self._network.generate(
             batched_tokens,
             length,
-            request.token_max_length,
+            token_max_length,
             {
                 "top_p": np.ones(self._total_batch) * top_p,
                 "temp": np.ones(self._total_batch) * temperature,
@@ -75,13 +80,13 @@ class FinetuneServeServicer(finetune_serve_pb2_grpc.FinetuneServeServicer):
         text = self._tokenizer.decode(output[1][0][0, :, 0])
 
         # A simple technique to stop at stop_sequence without modifying the underlying model
-        if request.stop_sequence != "" and request.stop_sequence in text:
+        if stop_sequence != "" and stop_sequence in text:
             text = text.split(request.stop_sequence)[0] + request.stop_sequence
 
         response.model = "GPT-J-6B"
         response.compute_time = time.time() - start
         response.response = text
-        response.prompt = context
+        response.prompt = prompt
         response.token_max_length = token_max_length
         response.temperature = temperature
         response.top_p = top_p

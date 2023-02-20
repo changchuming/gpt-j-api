@@ -29,5 +29,5 @@ message PromptResponse {
   int64 token_max_length = 5;
   double temperature = 6;
   double top_p = 7;
-  double stop_sequence = 8;
+  string stop_sequence = 8;
 }

@@ -27,7 +27,7 @@ def run(host, port, api_key, auth_token, timeout, use_tls, servername_override, 
     if auth_token:
         metadata.append(('authorization', 'Bearer ' + auth_token))
     request = finetune_serve_pb2.PromptRequest()
-    request.prompt = "LSL is"
+    request.prompt = "what is this thing"
     response = stub.Prompt(request, timeout, metadata=metadata)
     print('Response: {}'.format(response))
 
@@ -41,7 +41,7 @@ if __name__ == '__main__':
     parser.add_argument(
         '--port', type=int, default=8000, help='The port to connect to')
     parser.add_argument(
-        '--timeout', type=int, default=10, help='The call timeout, in seconds')
+        '--timeout', type=int, default=90, help='The call timeout, in seconds')
     parser.add_argument(
         '--api_key', default=None, help='The API key to use for the call')
     parser.add_argument(
