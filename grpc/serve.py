@@ -45,9 +45,9 @@ class FinetuneServeServicer(finetune_serve_pb2_grpc.FinetuneServeServicer):
         with status.context(context):
             response = finetune_serve_pb2.PromptResponse()
 
-            top_p = request.top_p != 0 ? request.top_p : 0.9
-            temperature = request.temperature != 0 ? request.temperature : 1.0
-            token_max_length = request.token_max_length != 0 ? request.token_max_length : 512
+            top_p = request.top_p if request.top_p != 0 else 0.9
+            temperature = request.temperature if request.temperature != 0 else 1.0
+            token_max_length = request.token_max_length if request.token_max_length != 0 else 512
             
             start = time.time()
             tokens = tokenizer.encode(request.prompt)
