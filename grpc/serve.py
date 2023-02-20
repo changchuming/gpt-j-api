@@ -50,6 +50,8 @@ class FinetuneServeServicer(finetune_serve_pb2_grpc.FinetuneServeServicer):
         temperature = request.temperature if request.temperature != 0 else 1.0
         token_max_length = request.token_max_length if request.token_max_length != 0 else 512
 
+        maps.thread_resources.env = maps.ResourceEnv(maps.Mesh(devices, ("dp", "mp")), ())
+
         start = time.time()
         tokens = self._tokenizer.encode(request.prompt)
         provided_ctx = len(tokens)
@@ -103,8 +105,6 @@ def create_servicer():
 
     mesh_shape = (jax.device_count() // cores_per_replica, cores_per_replica)
     devices = np.array(jax.devices()).reshape(mesh_shape)
-
-    maps.thread_resources.env = maps.ResourceEnv(maps.Mesh(devices, ("dp", "mp")), ())
 
     tokenizer = transformers.GPT2TokenizerFast.from_pretrained("gpt2")
 
