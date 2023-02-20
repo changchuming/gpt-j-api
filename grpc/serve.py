@@ -37,9 +37,10 @@ _PARAMS = {
 
 class FinetuneServeServicer(finetune_serve_pb2_grpc.FinetuneServeServicer):
     """Implements the FinetuneServe API server."""
-    def __init__(self, network, tokenizer):
+    def __init__(self, network, tokenizer, total_batch):
         self._network = network
         self._tokenizer = tokenizer
+        self._total_batch = total_batch
 
     def Prompt(self, request: finetune_serve_pb2.PromptRequest, context):
         response = finetune_serve_pb2.PromptResponse()
@@ -56,16 +57,16 @@ class FinetuneServeServicer(finetune_serve_pb2_grpc.FinetuneServeServicer):
             return InvalidArgumentError("Length of tokens specified exceeds maximum length.")
         pad_amount = seq - provided_ctx
         padded_tokens = np.pad(tokens, ((pad_amount, 0),)).astype(np.uint32)
-        batched_tokens = np.array([padded_tokens] * total_batch)
-        length = np.ones(total_batch, dtype=np.uint32) * len(tokens)
+        batched_tokens = np.array([padded_tokens] * self._total_batch)
+        length = np.ones(self._total_batch, dtype=np.uint32) * len(tokens)
 
         output = self._network.generate(
             batched_tokens,
             length,
             request.token_max_length,
             {
-                "top_p": np.ones(total_batch) * top_p,
-                "temp": np.ones(total_batch) * temperature,
+                "top_p": np.ones(self._total_batch) * top_p,
+                "temp": np.ones(self._total_batch) * temperature,
             },
         )
 
@@ -89,7 +90,7 @@ class FinetuneServeServicer(finetune_serve_pb2_grpc.FinetuneServeServicer):
 
 
 
-def create_network():
+def create_servicer():
     """Creates a transformer network."""
     per_replica_batch = _PARAMS["per_replica_batch"]
     cores_per_replica = _PARAMS["cores_per_replica"]
@@ -113,16 +114,16 @@ def create_network():
     network.state = read_ckpt(network.state, _CKPT_PATH, devices.shape[1])
     del network.state["opt_state"]
     network.state = network.move_xmap(network.state, np.zeros(cores_per_replica))
-    return network, tokenizer
+    return FinetuneServeServicer(network, tokenizer, total_batch)
 
 
 def serve(port, shutdown_grace_duration):
     """Configures and runs the FinetuneServe API server."""
     server = grpc.server(futures.ThreadPoolExecutor(max_workers=1))
 
-    network, tokenizer = create_network()
+    servicer = create_servicer()
     finetune_serve_pb2_grpc.add_FinetuneServeServicer_to_server(
-        FinetuneServeServicer(network, tokenizer), server)
+        servicer, server)
     server.add_insecure_port('[::]:{}'.format(port))
     server.start()
 
