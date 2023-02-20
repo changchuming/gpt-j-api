@@ -39,7 +39,7 @@ class FinetuneServeServicer(finetune_serve_pb2_grpc.FinetuneServeServicer):
     """Implements the FinetuneServe API server."""
     def __init__(self, network, tokenizer):
         self._network = network
-	self._tokenizer = tokenizer
+        self._tokenizer = tokenizer
 
     def Prompt(self, request: finetune_serve_pb2.PromptRequest, context):
         response = finetune_serve_pb2.PromptResponse()
