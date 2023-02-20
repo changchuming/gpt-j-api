@@ -37,10 +37,12 @@ _PARAMS = {
 
 class FinetuneServeServicer(finetune_serve_pb2_grpc.FinetuneServeServicer):
     """Implements the FinetuneServe API server."""
-    def __init__(self, network, tokenizer, total_batch):
+    def __init__(self, network, tokenizer, total_batch, env):
         self._network = network
         self._tokenizer = tokenizer
         self._total_batch = total_batch
+        maps.thread_resources.env = env
+
 
     def Prompt(self, request: finetune_serve_pb2.PromptRequest, context):
         response = finetune_serve_pb2.PromptResponse()
@@ -49,8 +51,6 @@ class FinetuneServeServicer(finetune_serve_pb2_grpc.FinetuneServeServicer):
         top_p = request.top_p if request.top_p != 0 else 0.9
         temperature = request.temperature if request.temperature != 0 else 1.0
         token_max_length = request.token_max_length if request.token_max_length != 0 else 512
-
-        maps.thread_resources.env = maps.ResourceEnv(maps.Mesh(devices, ("dp", "mp")), ())
 
         start = time.time()
         tokens = self._tokenizer.encode(request.prompt)
@@ -91,7 +91,6 @@ class FinetuneServeServicer(finetune_serve_pb2_grpc.FinetuneServeServicer):
         return response
 
 
-
 def create_servicer():
     """Creates a transformer network."""
     per_replica_batch = _PARAMS["per_replica_batch"]
@@ -105,6 +104,8 @@ def create_servicer():
     mesh_shape = (jax.device_count() // cores_per_replica, cores_per_replica)
     devices = np.array(jax.devices()).reshape(mesh_shape)
 
+    maps.thread_resources.env = maps.ResourceEnv(maps.Mesh(devices, ("dp", "mp")), ())
+
     tokenizer = transformers.GPT2TokenizerFast.from_pretrained("gpt2")
 
     total_batch = per_replica_batch * jax.device_count() // cores_per_replica
@@ -113,7 +114,7 @@ def create_servicer():
     network.state = read_ckpt(network.state, _CKPT_PATH, devices.shape[1])
     del network.state["opt_state"]
     network.state = network.move_xmap(network.state, np.zeros(cores_per_replica))
-    return FinetuneServeServicer(network, tokenizer, total_batch)
+    return FinetuneServeServicer(network, tokenizer, total_batch, maps.thread_resources.env)
 
 
 def serve(port, shutdown_grace_duration):
