@@ -2,8 +2,8 @@ import argparse
 
 import grpc
 
-import finetune_serve_pb2
-import finetune_serve_pb2_grpc
+import finetune_serve_http_pb2
+import finetune_serve_http_pb2_grpc
 
 
 def run(host, port, api_key, auth_token, timeout, use_tls, servername_override, ca_path):
@@ -20,13 +20,13 @@ def run(host, port, api_key, auth_token, timeout, use_tls, servername_override, 
     else:
         channel = grpc.insecure_channel('{}:{}'.format(host, port))
 
-    stub = finetune_serve_pb2_grpc.FinetuneServeStub(channel)
+    stub = finetune_serve_http_pb2_grpc.FinetuneServeStub(channel)
     metadata = []
     if api_key:
         metadata.append(('x-api-key', api_key))
     if auth_token:
         metadata.append(('authorization', 'Bearer ' + auth_token))
-    request = finetune_serve_pb2.PromptRequest()
+    request = finetune_serve_http_pb2.PromptRequest()
     request.prompt = "what is this thing"
     response = stub.Prompt(request, timeout, metadata=metadata)
     print('Response: {}'.format(response))

@@ -6,8 +6,8 @@ import time
 from google.protobuf import struct_pb2
 import grpc
 
-import finetune_serve_pb2
-import finetune_serve_pb2_grpc
+import finetune_serve_http_pb2
+import finetune_serve_http_pb2_grpc
 
 import jax
 from jax.experimental import maps
@@ -35,7 +35,7 @@ _PARAMS = {
 }
 
 
-class FinetuneServeServicer(finetune_serve_pb2_grpc.FinetuneServeServicer):
+class FinetuneServeServicer(finetune_serve_http_pb2_grpc.FinetuneServeServicer):
     """Implements the FinetuneServe API server."""
     def __init__(self, network, tokenizer, total_batch, env):
         self._network = network
@@ -44,8 +44,8 @@ class FinetuneServeServicer(finetune_serve_pb2_grpc.FinetuneServeServicer):
         self._env = env
 
 
-    def Prompt(self, request: finetune_serve_pb2.PromptRequest, context):
-        response = finetune_serve_pb2.PromptResponse()
+    def Prompt(self, request: finetune_serve_http_pb2.PromptRequest, context):
+        response = finetune_serve_http_pb2.PromptResponse()
 
         maps.thread_resources.env = self._env
         seq = _PARAMS["seq"]
@@ -127,7 +127,7 @@ def serve(port, shutdown_grace_duration):
     server = grpc.server(futures.ThreadPoolExecutor(max_workers=1))
 
     servicer = create_servicer()
-    finetune_serve_pb2_grpc.add_FinetuneServeServicer_to_server(
+    finetune_serve_http_pb2_grpc.add_FinetuneServeServicer_to_server(
         servicer, server)
     server.add_insecure_port('[::]:{}'.format(port))
     server.start()

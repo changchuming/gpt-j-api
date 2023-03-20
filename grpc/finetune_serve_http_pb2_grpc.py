@@ -2,7 +2,7 @@
 """Client and server classes corresponding to protobuf-defined services."""
 import grpc
 
-import finetune_serve_pb2 as finetune__serve__pb2
+import finetune_serve_http_pb2 as finetune__serve__http__pb2
 
 
 class FinetuneServeStub(object):
@@ -16,8 +16,8 @@ class FinetuneServeStub(object):
         """
         self.Prompt = channel.unary_unary(
                 '/endpoints.finetune.serve.FinetuneServe/Prompt',
-                request_serializer=finetune__serve__pb2.PromptRequest.SerializeToString,
-                response_deserializer=finetune__serve__pb2.PromptResponse.FromString,
+                request_serializer=finetune__serve__http__pb2.PromptRequest.SerializeToString,
+                response_deserializer=finetune__serve__http__pb2.PromptResponse.FromString,
                 )
 
 
@@ -36,8 +36,8 @@ def add_FinetuneServeServicer_to_server(servicer, server):
     rpc_method_handlers = {
             'Prompt': grpc.unary_unary_rpc_method_handler(
                     servicer.Prompt,
-                    request_deserializer=finetune__serve__pb2.PromptRequest.FromString,
-                    response_serializer=finetune__serve__pb2.PromptResponse.SerializeToString,
+                    request_deserializer=finetune__serve__http__pb2.PromptRequest.FromString,
+                    response_serializer=finetune__serve__http__pb2.PromptResponse.SerializeToString,
             ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
@@ -61,7 +61,7 @@ class FinetuneServe(object):
             timeout=None,
             metadata=None):
         return grpc.experimental.unary_unary(request, target, '/endpoints.finetune.serve.FinetuneServe/Prompt',
-            finetune__serve__pb2.PromptRequest.SerializeToString,
-            finetune__serve__pb2.PromptResponse.FromString,
+            finetune__serve__http__pb2.PromptRequest.SerializeToString,
+            finetune__serve__http__pb2.PromptResponse.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
